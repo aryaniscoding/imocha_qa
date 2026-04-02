@@ -1,0 +1,1111 @@
+{
+  "name": "Questions Generator (Topic level) Scenario",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7f84194f-a4e6-4d8b-bd5b-513a2d6893f1",
+              "name": "status",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            },
+            {
+              "id": "f4c56a8d-ef22-4053-ad16-00482b794540",
+              "name": "errorMessage",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2528,
+        2848
+      ],
+      "id": "8154d86b-fadf-474f-9391-4f393fffb314",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "25b12cc6-6392-41c0-9ccb-45fcea832fc3",
+              "name": "status",
+              "value": "\"success\"",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2880,
+        2400
+      ],
+      "id": "01007b8f-f351-4975-9ee6-44063eef6ee0",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://imochautility-production.up.railway.app/api/webhook/n8n/execution-status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"execution_id\": \"{{ $('Webhook').first().json.body.execution_id }}\",\n  \"user_id\": \"{{ $('Webhook').first().json.body.user_id }}\",\n  \"status\": \"error\",\n  \"error\": {\n    \"message\": \"{{ $json.errorMessage || 'Workflow execution failed' }}\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2752,
+        2848
+      ],
+      "id": "71bb0929-4f3b-4db9-92d4-6cd9b0309375",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://imochautility-production.up.railway.app/api/webhook/n8n/execution-status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"execution_id\": \"{{ $('Webhook').first().json.body.execution_id }}\",\n  \"user_id\": \"{{ $('Webhook').first().json.body.user_id }}\",\n  \"status\": \"success\",\n  \"data\": {\n    \"message\": \"Topicwise Creation (Scenario Based) completed successfully\",\n    \"skillName\": \"{{ $('Webhook').first().json.body.skillName }}\",\n    \"questionType\": \"{{ $('Webhook').first().json.body.questionType }}\",\n    \"result\": \"{{ $json.result }}\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3104,
+        2400
+      ],
+      "id": "baf0fcdb-067f-41b9-a525-64d910ca7600",
+      "name": "HTTP success"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Generated MCQs",
+        "emailType": "text",
+        "message": "Dear User,  Attached are the multiple-choice questions (MCQs) generated based on your recent request . The questions are provided in a structured format as requested, including difficulty levels, question text, options, correct answers, and explanations.  Thank you,  AgentMocha",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2608,
+        2416
+      ],
+      "id": "a8d7bf75-5512-4d97-9973-86427c053841",
+      "name": "Send a message",
+      "webhookId": "74024ba4-add1-4ad1-932b-0983a4614402",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pn1sOg9TC0KQguBE",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        2752
+      ],
+      "id": "2ed326fc-f76f-4232-adab-788e1471dd6b",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Q1YZrNTDtWRvd37F",
+          "name": "imocha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "====== ROLE & OBJECTIVE\nYou are an Expert Assessment Strategist. Your objective is to design distinct, non-overlapping assessment blueprints (called \"Angles\") for a specific Skill and Topic.\n\nThese angles will be used by downstream writers to generate multiple-choice questions. Therefore, the angles must define *distinct* scenarios and *distinct* mental tasks to ensure the final questions do not look or feel the same.\n\n===== INPUT DATA\n- Skill: {{ $json.skillName }}\n- Topic: {{ $json.topic }}\n- Context: {{ $json.context }}\n- Required Counts: Easy: {{ $json.easy }}, Medium: {{ $json.medium }}, Hard: {{ $json.hard }}\n\n===== DIVERSITY RULES (ABSOLUTE)\nYou must generate the required number of angles per difficulty.\nTo ensure diversity, every generated angle must differ in three dimensions:\n1. THE SITUATION: The setting or environment must change (e.g., if one angle is about a crisis moment, the next must be about routine planning or peer interaction).\n2. THE MENTAL TASK: The cognitive action required must change (e.g., if one angle asks to \"Identify\", the next must ask to \"Prioritize\", \"Fix\", or \"Analyze\").\n3. THE SUB-CONCEPT: Do not test the exact same facet of the Topic twice.\n\n===== DIFFICULTY FRAMEWORK\nGenerate angles based on these abstract definitions:\n\n1. EASY (Recall & Basic Understanding)\n   - Focus: Foundational principles, standard definitions, or recognizing the correct procedure in a straightforward, low-stakes situation.\n   - The Angle should ask the candidate to: Identify the standard approach or recognize the core concept.\n\n2. MEDIUM (Application & Analysis)\n   - Focus: Applying the topic to a realistic problem with constraints. The situation is not perfect; there is a hurdle or a specific requirement.\n   - The Angle should ask the candidate to: Select the best method to solve a specific issue or identify why a standard approach failed in this context.\n\n3. HARD (Evaluation & Synthesis)\n   - Focus: High-stakes judgment calls, managing conflicting priorities, or dealing with ambiguity and trade-offs.\n   - The Angle should ask the candidate to: Evaluate competing solutions to find the optimal one, or diagnose a complex, multi-layered failure.\n\n===== OUTPUT INSTRUCTIONS\n- Do NOT provide specific examples or content in the output. Provide *instructions* on what the scenario should be.\n- Do NOT use specific technical jargon unless it exists in the input Skill/Topic.\n- Output strictly valid JSON.\n\n===== JSON OUTPUT SCHEMA\n{\n  \"easy\": [\n    {\n      \"topic\": \"{{ $json.topic }}\",\n      \"context\": \"{{ $json.context }}\",\n      \"angle_label\": \"[Abstract name of the concept being tested]\",\n      \"angle_instruction\": \"[Detailed instruction defining the specific scenario and the specific mental task required]\",\n      \"semantic_focus\": \"[The specific principle or rule to be evaluated]\"\n    }\n  ],\n  \"medium\": [...],\n  \"hard\": [...]\n}\n",
+        "options": {
+          "systemMessage": "You are an expert assessment angle designer.\n\nYou generate angles for assessment questions.\n\nIMPORTANT:\nEach angle you generate corresponds to ONE UNIQUE QUESTION SLOT.\n\nIf a topic has:\n- 2 easy questions → generate 2 DIFFERENT easy angles\n- 1 medium question → generate 1 medium angle\n- 2 hard questions → generate 2 DIFFERENT hard angles\n\nAngles within the SAME difficulty MUST NOT overlap in:\n- angle_label\n- angle_instruction intent\n- semantic_focus\n\nYou must reason internally to ensure diversity, but output ONLY JSON.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -624,
+        2544
+      ],
+      "id": "cb0a2e47-108e-4306-8a60-d4e3fc992af9",
+      "name": "AI Agent easy ",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combined Normalize + Code5\n// Responsibility:\n// 1. Read GLOBAL fields from Webhook ONCE\n// 2. Normalize extracted rows\n// 3. Aggregate per-topic counts (easy / medium / hard)\n// 4. Output ONE item per topic\n\nconst items = $input.all();\n\n/* --------------------------------------------------\n   STEP 1: Read GLOBAL values from Webhook\n-------------------------------------------------- */\nlet webhookBody = {};\ntry {\n  webhookBody = $('Webhook').first().json.body || {};\n} catch (e) {}\n\nconst GLOBAL_SKILL =\n  webhookBody.skillName ||\n  webhookBody.SkillName ||\n  '';\n\nconst GLOBAL_EMAIL =\n  webhookBody.email ||\n  webhookBody.Email ||\n  '';\n\nconst GLOBAL_QTYPE =\n  webhookBody.questionType ||\n  webhookBody.QuestionType ||\n  '';\n\nif (!GLOBAL_SKILL) {\n  throw new Error(\"Combined Node: skill missing from webhook\");\n}\n\n/* --------------------------------------------------\n   Helper: find key ignoring case & spaces\n-------------------------------------------------- */\nfunction getKey(obj, target) {\n  return Object.keys(obj).find(\n    k => k.trim().toLowerCase() === target\n  );\n}\n\n/* --------------------------------------------------\n   STEP 2 + 3: Normalize + Aggregate per topic\n-------------------------------------------------- */\nconst out = [];\n\nfor (const item of items) {\n  const row = item.json || {};\n\n  const topic =\n    row.topic ||\n    row.Topic ||\n    '';\n\n  if (!topic) continue;\n\n  const context =\n    row.context ||\n    row.Context ||\n    '';\n\n  const easy   = Number(row[getKey(row, 'easy')])   || 0;\n  const medium = Number(row[getKey(row, 'medium')]) || 0;\n  const hard   = Number(row[getKey(row, 'hard')])   || 0;\n\n  out.push({\n    json: {\n      skillName: GLOBAL_SKILL,\n      topic,\n      context,\n      email: GLOBAL_EMAIL,\n      easy,\n      medium,\n      hard\n    }\n  });\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        2560
+      ],
+      "id": "c43ec68a-23ed-48db-8744-dcbfb253b364",
+      "name": "Code in JavaScript1",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        2512
+      ],
+      "id": "565c27f6-b328-4982-b2de-70ebc0f812d2",
+      "name": "Merge1",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "fileName": "={{ $json.Topic }}_questions.xlsx"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2064,
+        2448
+      ],
+      "id": "8a78814b-f18b-4fa8-843b-da9727a30162",
+      "name": "Convert to File1",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "/********************\n * CONFIG / CONSTANTS\n ********************/\nconst FIELD_ORDER_PIPE = [\n  \"Question Type\",\n  \"Difficulty Level\",\n  \"Question Text\",\n  \"Option (A)\",\n  \"Option (B)\",\n  \"Option (C)\",\n  \"Option (D)\",\n  \"Option (E)\",\n  \"Correct Option (A/B/C/D)\",\n  \"Answer Explanation\",\n  \"Score\",\n  \"Sub-Topics\",\n  \"Author\",\n  \"Topic\",\n];\n\n// Regex helpers\nconst RE_FIELD_LINE = /^([^:]+)\\s*:\\s*(.*)$/;                   // key: value\nconst RE_OPT_FIELD   = /^Option KATEX_INLINE_OPEN([A-E])KATEX_INLINE_CLOSE/i;\nconst RE_CORRECT     = /^Correct Option/i;\n\n/****************************************\n * TOPIC FALLBACK (fixed to return Topic)\n ****************************************/\nfunction getTopicWithFallback() {\n  let topicValue = null;\n\n  const tryNode = (name) => {\n    try {\n      const data = $(name).first().json;\n      if (data && data.Topic !== undefined) return data.Topic;\n    } catch (_) {}\n    return null;\n  };\n\n  topicValue = tryNode('Code3') || tryNode('Code1') || tryNode('Code4');\n  return topicValue || \"\";\n}\n\n/****************************************\n * PARSERS\n ****************************************/\n\n// Normalize key to match our canonical keys (case/spacing tolerant)\nfunction normalizeKeyToKnown(fieldNameRaw, knownKeys) {\n  const norm = fieldNameRaw\n    .replace(/\\s+/g, ' ')\n    .replace(/:+$/, '')\n    .trim()\n    .toLowerCase();\n\n  // Direct match\n  for (const k of knownKeys) {\n    if (k.toLowerCase() === norm) return k;\n  }\n\n  // Option keys like \"Option (A)\" variations\n  const optMatch = norm.match(/^option\\s*KATEX_INLINE_OPEN([a-e])KATEX_INLINE_CLOSE$/i);\n  if (optMatch) {\n    const letter = optMatch[1].toUpperCase();\n    return `Option (${letter})`;\n  }\n\n  // Correct option variants\n  if (norm.startsWith('correct option')) return \"Correct Option (A/B/C/D)\";\n\n  // Difficulty level variants\n  if (norm === 'difficulty level') return \"Difficulty Level\";\n  if (norm === 'sub-topics' || norm === 'sub-topics ') return \"Sub-Topics\";\n\n  return knownKeys.find(k => k.toLowerCase() === norm) || null;\n}\n\n// 1) Parse rows like:\n// \"Question Type: MCQ | Difficulty Level : Easy | Question Text : ... | Option (A) : ... | ...\"\n// Also supports unlabeled \"MCQ | Easy | ...\" (fallback)\nfunction parsePipeRow(row) {\n  if (typeof row !== 'string') return null;\n  if (!row.includes('|')) return null;\n\n  const questionTemplate = {\n    \"Question Type\": \"\",\n    \"Difficulty Level\": \"\",\n    \"Question Text\": \"\",\n    \"Option (A)\": \"\",\n    \"Option (B)\": \"\",\n    \"Option (C)\": \"\",\n    \"Option (D)\": \"\",\n    \"Option (E)\": \"\",\n    \"Correct Option (A/B/C/D)\": \"\",\n    \"Answer Explanation\": \"\",\n    \"Score\": \"\",\n    \"Sub-Topics\": \"\",\n    \"Author\": \"\",\n    \"Topic\": \"\"\n  };\n\n  const knownKeys = Object.keys(questionTemplate);\n\n  // Attempt labeled \"key: value | key: value\" parsing\n  const segments = row.split('|').map(s => s.trim()).filter(Boolean);\n  let labeledDetected = false;\n  const qLabeled = { ...questionTemplate };\n\n  for (const seg of segments) {\n    const m = seg.match(RE_FIELD_LINE);\n    if (!m) continue;\n    labeledDetected = true;\n\n    let fieldNameRaw = m[1].trim();\n    let value = m[2].trim();\n\n    const mappedKey = normalizeKeyToKnown(fieldNameRaw, knownKeys);\n    if (!mappedKey) continue;\n\n    if (/^Correct Option/i.test(mappedKey)) {\n      const corr = value.match(/[A-D]/i);\n      if (corr) qLabeled[\"Correct Option (A/B/C/D)\"] = corr[0].toUpperCase();\n      continue;\n    }\n\n    qLabeled[mappedKey] = value;\n  }\n\n  // If labeled parse succeeded and we have at least a stem and type, return it\n  if (labeledDetected && qLabeled[\"Question Type\"] && qLabeled[\"Question Text\"]) {\n    return qLabeled;\n  }\n\n  // Fallback: unlabeled pipe format (MCQ | Easy | ... | ...)\n  // Rough check: should have enough parts\n  let parts = row.split('|').map(p => p.trim());\n  if (parts.length < FIELD_ORDER_PIPE.length) return null;\n\n  if (parts.length > FIELD_ORDER_PIPE.length) {\n    const fixed = parts.slice(0, FIELD_ORDER_PIPE.length - 1);\n    fixed.push(parts.slice(FIELD_ORDER_PIPE.length - 1).join(' | '));\n    parts = fixed;\n  }\n\n  const q = { ...questionTemplate };\n  FIELD_ORDER_PIPE.forEach((key, idx) => {\n    q[key] = (parts[idx] || \"\").trim();\n  });\n\n  return q[\"Question Type\"] && q[\"Question Text\"] ? q : null;\n}\n\n// 2) Parse \"key: value\" style blocks (multi-line)\nfunction parseKeyValueBlock(block) {\n  const lines = block.split('\\n').map(l => l.trim()).filter(Boolean);\n  const question = {\n    \"Question Type\": \"\",\n    \"Difficulty Level\": \"\",\n    \"Question Text\": \"\",\n    \"Option (A)\": \"\",\n    \"Option (B)\": \"\",\n    \"Option (C)\": \"\",\n    \"Option (D)\": \"\",\n    \"Option (E)\": \"\",\n    \"Correct Option (A/B/C/D)\": \"\",\n    \"Answer Explanation\": \"\",\n    \"Score\": \"\",\n    \"Sub-Topics\": \"\",\n    \"Author\": \"\",\n    \"Topic\": \"\"\n  };\n\n  // Also support single-line \"key: value | key: value\" here\n  if (lines.length === 1 && lines[0].includes('|')) {\n    const tryPipe = parsePipeRow(lines[0]);\n    if (tryPipe) return tryPipe;\n  }\n\n  let currentField = null;\n\n  for (let i = 0; i < lines.length; i++) {\n    const line = lines[i];\n\n    const match = line.match(RE_FIELD_LINE);\n    if (match) {\n      const fieldNameRaw = match[1].trim();\n      const value = match[2].trim();\n\n      if (RE_OPT_FIELD.test(fieldNameRaw)) {\n        const letter = fieldNameRaw.match(/KATEX_INLINE_OPEN([A-E])KATEX_INLINE_CLOSE/i)[1].toUpperCase();\n        question[`Option (${letter})`] = value;\n        currentField = `Option (${letter})`;\n      } else if (RE_CORRECT.test(fieldNameRaw)) {\n        const corr = value.match(/[A-D]/i);\n        if (corr) question[\"Correct Option (A/B/C/D)\"] = corr[0].toUpperCase();\n        currentField = \"Correct Option (A/B/C/D)\";\n      } else {\n        const normKey = normalizeKeyToKnown(fieldNameRaw, Object.keys(question));\n        if (normKey) {\n          question[normKey] = value;\n          currentField = normKey;\n        } else {\n          currentField = null;\n        }\n      }\n    } else if (currentField === \"Question Text\" || currentField === \"Answer Explanation\") {\n      if (!RE_FIELD_LINE.test(line)) {\n        question[currentField] += \" \" + line;\n      } else {\n        i--;\n        currentField = null;\n      }\n    }\n  }\n\n  Object.keys(question).forEach(k => question[k] = (question[k] || \"\").trim());\n  if (question[\"Question Text\"] && question[\"Question Type\"]) return question;\n  return null;\n}\n\n// 3) Top-level dispatcher over any text block (handles code fences too)\nfunction parseMCQQuestions(input) {\n  // Ensure string\n  if (typeof input !== 'string') {\n    try { input = JSON.stringify(input); } catch { input = String(input); }\n  }\n\n  // Normalize: strip language tags after ```\n  input = input.replace(/```(\\w+)?\\n/g, '```\\n');\n\n  // First, try direct pipe-row parsing line by line:\n  const lines = input.split('\\n').map(l => l.trim()).filter(Boolean);\n  const result = [];\n\n  for (const line of lines) {\n    const q = parsePipeRow(line);\n    if (q) {\n      result.push(q);\n    }\n  }\n\n  if (result.length > 0) return result;\n\n  // Otherwise, fallback to the old block parser split by triple backticks\n  const blocks = input.split(\"```\").filter(b => b.trim() !== \"\");\n\n  for (const blockRaw of blocks) {\n    const block = blockRaw.replace(/^markdown\\n/i, '').trim();\n    const q = parseKeyValueBlock(block);\n    if (q) result.push(q);\n  }\n\n  // As a last fallback, try parsing the whole input as a block\n  if (result.length === 0) {\n    const q = parseKeyValueBlock(input);\n    if (q) result.push(q);\n  }\n\n  return result;\n}\n\n/****************************************\n * APPLY TOPIC\n ****************************************/\nfunction applyTopicMapping(questions) {\n  const topicValue = getTopicWithFallback();\n  return questions.map(q => {\n    if (!q.Topic || q.Topic.trim() === \"\") q.Topic = topicValue;\n    return q;\n  });\n}\n\n/****************************************\n * MAIN EXECUTION\n ****************************************/\nfunction processInputItems(items) {\n  const results = [];\n\n  for (const item of items) {\n    try {\n      let inputData = item.json;\n\n      // If input is an array like [{ output: \"...\" }, {...}]\n      if (Array.isArray(inputData)) {\n        for (const elem of inputData) {\n          if (typeof elem === 'string') {\n            const parsed = parseMCQQuestions(elem);\n            results.push(...applyTopicMapping(parsed).map(q => ({ json: q })));\n          } else if (elem && typeof elem === 'object') {\n            if (typeof elem.output === 'string') {\n              const parsed = parseMCQQuestions(elem.output);\n              results.push(...applyTopicMapping(parsed).map(q => ({ json: q })));\n            } else {\n              // Try any string fields within the element\n              for (const k of Object.keys(elem)) {\n                const v = elem[k];\n                if (typeof v === 'string' && (v.includes('Question Type') || v.includes('|'))) {\n                  const parsed = parseMCQQuestions(v);\n                  if (parsed.length) {\n                    results.push(...applyTopicMapping(parsed).map(q => ({ json: q })));\n                  }\n                }\n              }\n            }\n          }\n        }\n        continue;\n      }\n\n      if (typeof inputData === 'string') {\n        const parsed = parseMCQQuestions(inputData);\n        results.push(...applyTopicMapping(parsed).map(q => ({ json: q })));\n        continue;\n      }\n\n      if (inputData && typeof inputData === 'object') {\n        let found = false;\n\n        // Common keys\n        const probableKeys = Object.keys(inputData);\n        for (const key of probableKeys) {\n          const val = inputData[key];\n          if (typeof val === 'string' && (val.includes('Question Type') || val.includes('|'))) {\n            const parsed = parseMCQQuestions(val);\n            if (parsed.length) {\n              results.push(...applyTopicMapping(parsed).map(q => ({ json: q })));\n              found = true;\n            }\n          }\n        }\n\n        if (!found) {\n          const parsed = parseMCQQuestions(JSON.stringify(inputData));\n          results.push(...applyTopicMapping(parsed).map(q => ({ json: q })));\n        }\n      }\n    } catch (err) {\n      console.error(`Error processing item: ${err.message}`);\n    }\n  }\n\n  return results.length ? results : [{ json: { Error: \"No questions could be parsed from the input\" } }];\n}\n\nconst items = $input.all();\nreturn processInputItems(items);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        2480
+      ],
+      "id": "4677e515-d150-478d-9482-b49974931e58",
+      "name": "Code",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n\nN8N Code Node for processing webhook data and binary files (Current Version)\nThis code uses the most current n8n syntax for accessing webhook data\nand processing binary files.\n*/\n// Code that runs for each item\nconst item = items[0]; // Get the first item\n\n// Extract skillName and email from webhook JSON body\n// Using the expression syntax as specified in your requirements\nconst skillName = $('Webhook').first().json.body.skillName;\nconst email = $('Webhook').first().json.body.email;\n\n// Process binary data\nlet binaryDataInfo = {\nexists: false,\nsize: 0,\ntype: null,\nfileName: null\n};\n\n// Check if binary data exists\nif (item.binary && Object.keys(item.binary).length > 0) {\n// Get the first binary property key (usually 'data' as mentioned in your requirements)\nconst binaryPropertyName = Object.keys(item.binary)[0];\nconst binaryData = item.binary[binaryPropertyName];\n\nbinaryDataInfo = {\nexists: true,\nsize: binaryData.size,\ntype: binaryData.mimeType,\nfileName: binaryData.fileName || 'unknown'\n};\n\n// Return the processed data with binary\nreturn {\njson: {\nskillName,\nemail,\nprocessedAt: new Date().toISOString(),\nbinaryInfo: binaryDataInfo,\nmessage: \"Successfully processed webhook data and binary file\"\n},\n// Pass through the binary data\nbinary: item.binary\n};\n}\n\n// If no binary data, return just the JSON\nreturn {\njson: {\nskillName,\nemail,\nprocessedAt: new Date().toISOString(),\nbinaryInfo: binaryDataInfo,\nmessage: \"Successfully processed webhook data, but no binary file was found\"\n}\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        2432
+      ],
+      "id": "be77ef9d-bebd-4a10-b887-d5b30f508242",
+      "name": "Code3",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code7 – EASY: attach balanced A–D position and pass angle metadata\n\nconst positions = ['A', 'B', 'C', 'D'];\nconst maxSameInRow = 2;\n\n// collect easy blocks\nconst easyBlocks = $input.all()\n  .map(item => item.json.easy)\n  .filter(Boolean);\n\nif (easyBlocks.length === 0) {\n  console.warn('No easy blocks found');\n  return [];\n}\n\n// balanced position picker\nconst history = [];\nconst count = { A: 0, B: 0, C: 0, D: 0 };\n\nfunction pickPosition() {\n  let allowed = positions.slice();\n  if (history.length >= maxSameInRow) {\n    const recent = history.slice(-maxSameInRow);\n    if (recent.every(p => p === recent[0])) {\n      allowed = allowed.filter(p => p !== recent[0]);\n    }\n  }\n  const min = Math.min(...allowed.map(p => count[p]));\n  const pool = allowed.filter(p => count[p] === min);\n  const pos = pool[Math.floor(Math.random() * pool.length)];\n  history.push(pos);\n  count[pos]++;\n  return pos;\n}\n\n// build output\nreturn easyBlocks.map(block => ({\n  json: {\n    topic: block.topic,\n    context: block.context || '',\n    angle_label: block.angle_label,\n    angle_instruction: block.angle_instruction,\n    semantic_focus: block.semantic_focus || '',\n    correctPosition: pickPosition()\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        2128
+      ],
+      "id": "8075eb69-e265-47c8-b3e0-f16bdf0d5dd6",
+      "name": "Code10",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code8 – MEDIUM: attach balanced A–D position and pass angle metadata\n\nconst positions = ['A', 'B', 'C', 'D'];\nconst maxSameInRow = 2;\n\nconst mediumBlocks = $input.all()\n  .map(item => item.json.medium)\n  .filter(Boolean);\n\nif (mediumBlocks.length === 0) {\n  console.warn('No medium blocks found');\n  return [];\n}\n\nconst history = [];\nconst count = { A: 0, B: 0, C: 0, D: 0 };\n\nfunction pickPosition() {\n  let allowed = positions.slice();\n  if (history.length >= maxSameInRow) {\n    const recent = history.slice(-maxSameInRow);\n    if (recent.every(p => p === recent[0])) {\n      allowed = allowed.filter(p => p !== recent[0]);\n    }\n  }\n  const min = Math.min(...allowed.map(p => count[p]));\n  const pool = allowed.filter(p => count[p] === min);\n  const pos = pool[Math.floor(Math.random() * pool.length)];\n  history.push(pos);\n  count[pos]++;\n  return pos;\n}\n\nreturn mediumBlocks.map(block => ({\n  json: {\n    topic: block.topic,\n    context: block.context || '',\n    angle_label: block.angle_label,\n    angle_instruction: block.angle_instruction,\n    semantic_focus: block.semantic_focus || '',\n    correctPosition: pickPosition()\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        2592
+      ],
+      "id": "12db8bf7-3d11-42a6-bf0a-da861199e143",
+      "name": "Code11",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code9 – HARD: attach balanced A–D position and pass angle metadata\n\nconst positions = ['A', 'B', 'C', 'D'];\nconst maxSameInRow = 2;\n\nconst hardBlocks = $input.all()\n  .map(item => item.json.hard)\n  .filter(Boolean);\n\nif (hardBlocks.length === 0) {\n  console.warn('No hard blocks found');\n  return [];\n}\n\nconst history = [];\nconst count = { A: 0, B: 0, C: 0, D: 0 };\n\nfunction pickPosition() {\n  let allowed = positions.slice();\n  if (history.length >= maxSameInRow) {\n    const recent = history.slice(-maxSameInRow);\n    if (recent.every(p => p === recent[0])) {\n      allowed = allowed.filter(p => p !== recent[0]);\n    }\n  }\n  const min = Math.min(...allowed.map(p => count[p]));\n  const pool = allowed.filter(p => count[p] === min);\n  const pos = pool[Math.floor(Math.random() * pool.length)];\n  history.push(pos);\n  count[pos]++;\n  return pos;\n}\n\nreturn hardBlocks.map(block => ({\n  json: {\n    topic: block.topic,\n    context: block.context || '',\n    angle_label: block.angle_label,\n    angle_instruction: block.angle_instruction,\n    semantic_focus: block.semantic_focus || '',\n    correctPosition: pickPosition()\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        3168
+      ],
+      "id": "a950a0b9-fb4a-4e19-895c-8335a0b5c9f7",
+      "name": "Code12",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "topicsFile",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        2576
+      ],
+      "id": "e12f3f2f-acd3-4cf3-a534-99b1ea3065fe",
+      "name": "Extract from File",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "easy,medium,hard",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2560
+      ],
+      "id": "c73f5256-ba4d-4820-aa6b-96a968f1298e",
+      "name": "Split Out",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4.1-fast",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        976,
+        2784
+      ],
+      "id": "a4c66da9-8c3c-4f19-81cf-cbe88b3cc52a",
+      "name": "OpenRouter Chat Model16",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Q1YZrNTDtWRvd37F",
+          "name": "imocha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=====# ROLE & OBJECTIVE\nYou are an expert assessment designer specializing in creating high-quality, assessment-ready multiple-choice questions (MCQs). Your task is to create an EASY difficulty scenario-based MCQ that tests foundational knowledge and basic understanding.\n\n---\n\n# LANGUAGE SETTING\nSTRICT US ENGLISH ONLY: Use American spelling (e.g., \"color\", \"analyze\", \"center\") and grammar conventions throughout the question, options, and explanation.\n\n---\n\n# COGNITIVE LEVEL DEFINITION: EASY\nThis question must align with Bloom's Taxonomy levels: REMEMBER and UNDERSTAND\n- Test recognition of fundamental concepts, definitions, and basic facts\n- Require identification of correct procedures or principles\n- Focus on \"what\" and \"how\" at a foundational level\n- A candidate with basic training should answer correctly\n- Single-concept focus with straightforward application\n\nWhat makes a question EASY:\n- Tests one concept at a time\n- Requires recall or basic comprehension\n- Has a clearly correct answer without deep analysis\n- Scenario is simple and direct\n- No hidden complexities or edge cases\n\n---\n\n# TOPIC AND SUBTOPIC ASSIGNMENT\n- Topic: \"{{ $('Webhook').first().json.body.skillName }}\"\n- Subtopic: \"{{ $json.topic }}\"\n\nCRITICAL RULE:\nThese literal values must ONLY appear in the \"Topic\" and \"Sub-Topics\" output fields.\n- DO NOT include \"{{ $('Webhook').first().json.body.skillName }}\" in the Question Text\n- DO NOT include \"{{ $json.topic }}\" in the Question Text\n- DO NOT include either value in any of the options (A, B, C, or D)\n- Rephrase concepts naturally without using these exact strings\n\n---\n\n# ANGLE PARAMETERS (INPUT — AUTHORITATIVE)\nThese values are provided by the upstream angle selector and MUST be used to shape the question.\n\n- Angle Label: \"{{ $json.angle_label }}\"\n- Angle Instruction: \"{{ $json.angle_instruction }}\"\n- Semantic Focus: \"{{ $json.semantic_focus }}\"\n\nANGLE USAGE RULES (STRICT):\n1. Use angle_instruction to decide the scenario and the exact task being tested.\n2. Use semantic_focus to decide the single mental skill being evaluated.\n3. Treat angle_label as internal guidance; do NOT print it verbatim unless it naturally fits and violates no rules.\n4. Do NOT invent, modify, merge, or override angle parameters.\n5. Do NOT include the literal values of angle_label, angle_instruction, or semantic_focus verbatim in the Question Text or Options.\n\n---\n\n# USER CONTEXT HANDLING\n{{ $json.context }}\n\nContext Processing Rules:\n1. If context exists and is non-empty, use it to tailor:\n   - Tone and writing style\n   - Target audience characteristics\n   - Scenario setting and industry context\n2. If context conflicts with any rule in this prompt, IGNORE the context.\n3. If context is empty or missing, use a neutral professional tone.\n\n---\n\n# QUESTION TEXT REQUIREMENTS\n\nStructural Requirements:\n1. Scenario-based, realistic workplace or practical situation\n2. Focus on a SINGLE task or concept\n3. Grammatically correct, professional US English\n\nDynamic Question Phrasing Rules:\n- Use HOW for processes or actions\n- Use WHAT for specific outcomes or purposes\n- Use WHICH only when selecting named entities (never \"Which of the following\")\n\nPROHIBITED first word of Question Text:\nYou, Your, A, An, The, When, Where, Why, Who, Whom, Whose, While, If\n\nContent Restrictions:\n- No real company names\n- No famous people\n- No health-related topics\n- No sensitive or biased scenarios\n\n---\n\n# SCENARIO DESIGN GUIDELINES (EASY)\n- Clear, simple professional scenario\n- One decision or knowledge point\n- Direct and realistic\n- Ends with a properly phrased question\n\n---\n\n# OPTIONS REQUIREMENTS\n\n- Exactly FOUR options: A, B, C, D\n- 5–10 words per option\n- Grammatically parallel\n- Plausible and non-obvious\n- No absolutes or giveaway words\n- No literal topic or subtopic values\n\nCorrect Answer Placement:\nCorrect answer MUST be at position {{ $json.correctPosition }}\n\nDistractor Types:\n- Common misconception\n- Partial understanding\n- Adjacent but incorrect concept\n\n---\n\n# CORRECT ANSWER AND EXPLANATION\n\nExplanation MUST:\n- Explain why the correct answer is correct\n- Briefly explain why one distractor is incorrect\n- Justify why the question is EASY\n- Use US English\n\nExplanation Structure:\n\"[Correct answer] is correct because [reason]. [Distractor] is incorrect because [reason]. This is an easy question as it tests basic understanding of [concept].\"\n\n---\n\n# OUTPUT FORMAT (EXACT)\n\nQuestion Type: MCQ\nDifficulty Level: Easy\nQuestion Text: ...\nOption (A): ...\nOption (B): ...\nOption (C): ...\nOption (D): ...\nOption (E):\nCorrect Option (A/B/C/D): {{ $json.correctPosition }}\nAnswer Explanation: ...\nScore: 1\nSub-Topics: {{ $json.topic }}\nAuthor: Imocha\nTopic: {{ $('Webhook').first().json.body.skillName}}\n\nFormat Notes:\n- Option (E) MUST be empty\n- Score MUST be 1\n- Author MUST be Imocha\n- Question Type MUST be MCQ\n- Difficulty Level MUST be Easy\n\n---\n\n# FINAL INSTRUCTIONS\n- Follow ALL rules strictly\n- Do not add commentary\n- Output ONLY the formatted MCQ\n- Ensure alignment with angle parameters\n- Ensure the correct option at {{ $json.correctPosition }} is genuinely correct\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        544,
+        2112
+      ],
+      "id": "efc2b921-a010-4546-8e21-85bf7b43259a",
+      "name": "AI Agent easy 2",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "===== ROLE & OBJECTIVE\nYou are an expert assessment designer specializing in creating high-quality, assessment-ready multiple-choice questions (MCQs).\n\nYour task is to generate ONE MEDIUM difficulty, scenario-based MCQ strictly driven by the provided semantic angle parameters.\n\n---\n\n# LANGUAGE SETTING\nSTRICT US ENGLISH ONLY.\n\n---\n\n# DIFFICULTY DEFINITION: MEDIUM\nAligned with Bloom’s Taxonomy: APPLY and ANALYZE.\n\nA MEDIUM question:\n- Requires applying knowledge to a realistic situation\n- Requires analyzing constraints or trade-offs\n- Connects 2–3 related concepts\n- Has multiple plausible approaches\n- Has a clearly best answer only after analysis\n\n---\n\n# ANGLE PARAMETERS (AUTHORITATIVE INPUT)\n\nAngle Label:\n{{ $json.angle_label }}\n\nAngle Instruction:\n{{ $json.angle_instruction }}\n\nSemantic Focus:\n{{ $json.semantic_focus }}\n\nANGLE USAGE RULES (CRITICAL):\n1. The entire question MUST be derived ONLY from angle_instruction.\n2. semantic_focus defines the reasoning skill to be tested.\n3. Do NOT introduce additional angles, skills, or dimensions.\n4. Do NOT generalize beyond the instruction.\n5. Do NOT mention or expose angle_label, angle_instruction, or semantic_focus in the output text.\n6. Do NOT include examples, tools, or explanations outside the scope of the angle.\n\n---\n\n# TOPIC & SUB-TOPIC BINDING (STRICT)\n\nTopic:\n{{ $('Webhook').first().json.body.skillName }}\n\nSub-Topic:\n{{ $json.topic }}\n\nCRITICAL RULES:\n- Topic and Sub-Topic values MUST appear ONLY in the output fields.\n- NEVER include them in Question Text, Options, or Explanation.\n- Concepts must be naturally rephrased.\n\n---\n\n# USER CONTEXT (OPTIONAL)\n{{ $json.context }}\n\nContext Processing Rules:\n1. If context exists and is non-empty, use it to tailor:\n   - Tone and writing style\n   - Target audience characteristics\n   - Scenario setting and industry context\n2. If context conflicts with any rule in this prompt, IGNORE the context.\n3. If context is empty or missing, use a neutral professional tone.\n---\n\n# QUESTION TEXT REQUIREMENTS\n\nStructural Rules:\n1. Scenario-based and professional\n2. Concise: maximum 3–4 sentences total\n3. Start directly with the technical situation (no fluff)\n4. Focus on application and analysis\n5. Include 2–3 complexity elements such as:\n   - Constraints\n   - Trade-offs\n   - Dependencies\n   - Competing priorities\n\nDynamic Ending Rules:\n- HOW → process or action\n- WHAT → outcome or result\n- WHICH → only with a specific noun (never generic)\n\nPROHIBITED as the first word:\nYou, Your, A, An, The, When, Where, Why, Who, Whom, Whose, While, If\n\n---\n\n# OPTIONS REQUIREMENTS\n\n- Exactly FOUR options: A, B, C, D\n- Each option: 5–12 words\n- Parallel grammatical structure\n- Equal technical depth\n- All options plausible to intermediate candidates\n\nCorrect answer MUST be placed at:\n{{ $json.correctPosition }}\n\nDistractor Types:\n- Correct in a different situation\n- Missing a key constraint\n- Oversimplified approach\n- Common practitioner mistake\n\nNO options may:\n- Contain topic or sub-topic literals\n- Use absolutes (always, never, only)\n- Include giveaway or meta language\n\n---\n\n# EXPLANATION REQUIREMENTS\n\nExplanation MUST:\n- Clearly justify why the correct option fits the scenario\n- Reference specific scenario constraints or trade-offs\n- Briefly explain why one distractor fails\n- Explicitly justify MEDIUM difficulty\n\nExplanation Structure:\n\"[Correct option] is the best approach because [reason tied to scenario]. [Distractor] is incorrect because [specific flaw]. This is a medium difficulty question as it requires applying [concept] under [constraint or trade-off].\"\n\n---\n\n# OUTPUT FORMAT (STRICT — NO DEVIATION)\n\nQuestion Type: MCQ\nDifficulty Level: Medium\nQuestion Text: [Scenario-based question ending with ?]\nOption (A): [5–12 words]\nOption (B): [5–12 words]\nOption (C): [5–12 words]\nOption (D): [5–12 words]\nOption (E):\nCorrect Option (A/B/C/D): {{ $json.correctPosition }}\nAnswer Explanation: [Explanation]\nScore: 1\nSub-Topics: {{ $json.topic }}\nAuthor: Imocha\nTopic: {{ $('Webhook').first().json.body.skillName }}\n\n---\n\n# FINAL INSTRUCTIONS\n- Generate ONE MCQ only\n- Follow angle_instruction EXACTLY\n- Use semantic_focus to guide reasoning depth\n- Do NOT mention angles or internal logic\n- Output ONLY the formatted MCQ\n- Ensure the correct option at {{ $json.correctPosition }} is clearly superior after analysis\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        544,
+        2560
+      ],
+      "id": "c897957b-607b-4872-aedf-19c89dbea28e",
+      "name": "AI Agent medium ",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=====# ROLE & OBJECTIVE\nYou are an expert MCQ quality assurance specialist. Your task is to validate and correct a Medium-level MCQ question to ensure it meets all assessment standards, uses correct US English, and is ready for deployment.\n\n---\n\n# INPUT FOR VALIDATION\nThe following is the raw MCQ output that requires validation and correction:\n\n{{ $json.output }}\n\n---\n\n# REFERENCE VALUES\n- **Topic:** {{ $('Webhook').first().json.body.skillName }}\n- **Subtopic:** {{ $('Code11').first().json.topic }}\n- **Required Correct Option Position:** {{ $('Code11').first().json.correctPosition }}\n\n---\n\n# VALIDATION FRAMEWORK\n\n## STEP 1: STRUCTURAL VALIDATION\n\nVerify each requirement and mark as PASS or FAIL:\n\n**1.1 Question Structure:**\n| Requirement | Check |\n|-------------|-------|\n| Is it an MCQ with exactly 4 options (A, B, C, D)? | [ ] |\n| Is the question scenario-based but concise (max 3-4 sentences)? | [ ] |\n| Does the question present a situation requiring analysis? | [ ] |\n| Does the question END with a question mark? | [ ] |\n| Is Option E left blank/empty? | [ ] |\n\n**1.2 Starting Word Validation:**\nThe **very first word** of the Question Text must NOT be any of these:\n- \"You\", \"Your\"\n- \"A\", \"An\", \"The\"\n- \"When\", \"Where\", \"Why\", \"Who\", \"Whom\", \"Whose\"\n- \"While\", \"If\"\n\n| Check | Status |\n|-------|--------|\n| First word of question is NOT a prohibited word | [ ] |\n\n**1.3 Topic/Subtopic Containment:**\n| Check | Status |\n|-------|--------|\n| Question Text does NOT contain literal topic value | [ ] |\n| Question Text does NOT contain literal subtopic value | [ ] |\n| Option A does NOT contain literal topic/subtopic | [ ] |\n| Option B does NOT contain literal topic/subtopic | [ ] |\n| Option C does NOT contain literal topic/subtopic | [ ] |\n| Option D does NOT contain literal topic/subtopic | [ ] |\n| Topic field contains correct value | [ ] |\n| Sub-Topics field contains correct value | [ ] |\n\n**1.4 Phrasing Variety Check:**\n| Check | Status |\n|-------|--------|\n| Question avoids generic \"Which of the following...\" or \"Which option...\"? | [ ] |\n| The question stem (\"What\"/\"How\"/\"Which\") matches the answer type? | [ ] |\n\n---\n\n## STEP 2: GRAMMAR, LANGUAGE, AND PUNCTUATION CHECK\n\n**2.1 US English Verification:**\n- Ensure all spelling follows US English conventions (e.g., \"behavior\" not \"behaviour\", \"optimize\" not \"optimise\").\n- Ensure dates/units follow US formats if present.\n\n**2.2 Punctuation & Articles:**\n- **Articles (A/An/The):** Verify that all articles are used correctly. Fix missing or superfluous articles (e.g., \"team follows procedure\" -> \"the team follows a procedure\").\n- **Punctuation:** Ensure the Question Text ends with a question mark \"?\". Ensure all options end with consistent punctuation.\n- **Run-on Sentences:** Fix any run-on sentences or comma splices.\n\n**2.3 Names Validation:**\n- Generic US names (e.g., John, Alice) are ALLOWED.\n- Real famous person names or celebrity names are PROHIBITED.\n\n---\n\n## STEP 3: COGNITIVE LEVEL VALIDATION\n\n**Medium Difficulty Criteria (Bloom's: Apply/Analyze):**\n| Requirement | Check |\n|-------------|-------|\n| Tests application of knowledge to specific situation | [ ] |\n| Requires analysis of scenario details | [ ] |\n| Involves comparing approaches or evaluating trade-offs | [ ] |\n| Correct answer depends on scenario specifics | [ ] |\n| Some distractors would be valid in different contexts | [ ] |\n| NOT solvable by simple recall alone | [ ] |\n\n**If the question is TOO EASY for Medium level:**\n- Add complexity elements (constraints, trade-offs, competing priorities)\n- Require consideration of multiple factors\n- Make distractors more sophisticated (correct in other situations)\n- Ensure answer requires analysis, not recall\n\n**If the question is TOO HARD for Medium level:**\n- Reduce the number of factors to consider\n- Make the correct answer more clearly the best choice\n- Simplify the scenario while keeping application focus\n- Reduce ambiguity between options\n\n---\n\n## STEP 4: OPTIONS QUALITY VALIDATION\n\n**4.1 Uniqueness Check:**\n| Comparison | Similar? | Action Needed |\n|------------|----------|---------------|\n| A vs B | [ ] | [ ] |\n| A vs C | [ ] | [ ] |\n| A vs D | [ ] | [ ] |\n| B vs C | [ ] | [ ] |\n| B vs D | [ ] | [ ] |\n| C vs D | [ ] | [ ] |\n\nIf any pair shares >40% words or same meaning -> REWRITE to make unique\n\n**4.2 Plausibility Check:**\n| Option | Plausible to Intermediate? | Requires Analysis to Reject? |\n|--------|---------------------------|------------------------------|\n| A | [ ] | [ ] |\n| B | [ ] | [ ] |\n| C | [ ] | [ ] |\n| D | [ ] | [ ] |\n\nAll options MUST be plausible and require analysis to evaluate.\n\n**4.3 Disqualifying Keywords Check:**\nThe following words should NOT appear in any option:\n- \"ignore\", \"neglect\", \"deny\", \"solely\", \"skip\", \"rely\"\n- \"always\", \"never\", \"only\", \"all\", \"none\" (absolutes)\n- \"obviously\", \"clearly\", \"the best\", \"correctly\", \"must choose\" (giveaways)\n- \"true statement\", \"correct approach\" (meta-hints)\n\n| Option | Contains Disqualifying Word? | Word Found |\n|--------|------------------------------|------------|\n| A | [ ] | |\n| B | [ ] | |\n| C | [ ] | |\n| D | [ ] | |\n\n**4.4 Parallel Structure & Length Check:**\n| Requirement | Status |\n|-------------|--------|\n| All options are between 5-12 words | [ ] |\n| All options have similar grammatical structure | [ ] |\n| All options have similar length | [ ] |\n| All options have similar level of specificity | [ ] |\n| All options have similar technical depth | [ ] |\n| All options address the question asked | [ ] |\n\n**4.5 Meta-Hint and Bias Check:**\n| Requirement | Status |\n|-------------|--------|\n| No option contains answer-revealing phrases | [ ] |\n| No asymmetric phrasing (one option more detailed) | [ ] |\n| No test-wise cues that reveal correctness | [ ] |\n| Tone is consistent across all options | [ ] |\n\n---\n\n## STEP 5: CORRECT ANSWER VALIDATION\n\n| Requirement | Status |\n|-------------|--------|\n| Correct answer is clearly identified | [ ] |\n| Correct answer is at position {{ $('Code11').first().json.correctPosition }} | [ ] |\n| Correct answer is genuinely the BEST answer for THIS scenario | [ ] |\n| Correct answer is defensible with evidence from scenario | [ ] |\n| Explanation references scenario details | [ ] |\n| Explanation justifies why correct answer is right | [ ] |\n| Explanation mentions why a distractor is wrong | [ ] |\n| Explanation justifies Medium difficulty | [ ] |\n\n---\n\n## STEP 6: COMPLIANCE VALIDATION\n\n**EEOC Compliance:**\n| Requirement | Status |\n|-------------|--------|\n| No gender bias | [ ] |\n| No racial/ethnic references | [ ] |\n| No religious content | [ ] |\n| No age-related bias | [ ] |\n| No health-related topics | [ ] |\n\n**Content Safety:**\n| Requirement | Status |\n|-------------|--------|\n| No real company names | [ ] |\n| No real famous person names (Generic names are OK) | [ ] |\n| No controversial topics | [ ] |\n| No politically sensitive content | [ ] |\n\n---\n\n## STEP 7: FORMAT VALIDATION\n\n| Requirement | Status |\n|-------------|--------|\n| Question Type = \"MCQ\" | [ ] |\n| Difficulty Level = \"Medium\" | [ ] |\n| Score = \"1\" | [ ] |\n| Author = \"Imocha\" | [ ] |\n| Option E is blank/empty | [ ] |\n| All required columns present | [ ] |\n| Correct column order | [ ] |\n\n---\n\n# AUTO-CORRECTION PROTOCOL\n\nFor each FAILED validation check, apply the following corrections:\n\n**Starting Word Fix:**\nIf Question Text starts with prohibited word:\n1. Identify the current first word\n2. Restructure the sentence to start with an acceptable word\n3. Maintain the original meaning\n4. Use patterns like: \"During...\", \"After...\", \"Following...\", \"Upon...\", \"In the middle of...\"\n\n**Generic Phrasing Fix:**\nIf the question uses generic phrasing like \"Which of the following is correct?\" or \"Which option should be used?\":\n1. Analyze the Correct Answer.\n   - If it describes an action -> Rewrite question to start with \"How...\" (e.g., \"How should the user...\")\n   - If it describes a result/object -> Rewrite question to start with \"What...\" (e.g., \"What is the result of...\")\n   - If it compares named items -> Ensure \"Which\" is followed by a noun (e.g., \"Which algorithm...\")\n\n**Scenario Length Fix:**\nIf Question Text is too long or fluffy:\n1. Remove any \"You are a...\" or role-play introductions.\n2. Condense the context to essential technical details only.\n3. Ensure the entire question text is 3-4 sentences maximum.\n\n**Grammar & Language Fix:**\n1. Convert any British spelling to US English.\n2. Insert missing articles (a, an, the) where grammatically required.\n3. Fix punctuation errors (add missing periods/question marks).\n\n**Option Length Fix:**\nIf options exceed 12 words, rewrite to be more concise. Use imperative/direct phrasing (e.g., \"Implement X\" instead of \"You should implement X\"). Ensure length is 5-12 words.\n\n**Cognitive Level Fix:**\nIf question is too easy:\n1. Add a constraint or trade-off to the scenario\n2. Make distractors represent \"correct in other contexts\" errors\n3. Require consideration of scenario-specific factors\n\nIf question is too hard:\n1. Simplify the scenario while keeping application focus\n2. Make the best answer more clearly connected to scenario details\n3. Reduce ambiguity between options\n\n**Topic/Subtopic Containment Fix:**\nIf Question Text or Options contain literal topic/subtopic:\n1. Rephrase to describe the concept without using the exact term\n2. Use synonyms or descriptive phrases\n3. Ensure meaning is preserved\n\n**Option Uniqueness Fix:**\nIf duplicate or near-duplicate options found:\n1. Keep the better-worded option\n2. Rewrite the duplicate to represent a different type of error:\n   - Correct for different situation\n   - Missing key consideration\n   - Over-simplified approach\n   - Common practitioner mistake\n3. Verify new option is plausible\n\n**Correct Answer Position Fix:**\nIf correct answer is not at required position {{ $('Code11').first().json.correctPosition }}:\n1. Identify which option is currently correct\n2. Swap content between current correct position and required position\n3. Update the \"Correct Option\" field\n4. Ensure swapped options still make sense\n\n**Meta-Hint and Bias Fix:**\nIf any option contains meta-hints, absolutes, or asymmetric phrasing:\n1. Identify the problematic phrase\n2. Rewrite to neutral, parallel form\n3. Maintain technical meaning\n4. Ensure all options remain plausible and comparable\n\n---\n\n# OUTPUT REQUIREMENTS\n\nAfter completing ALL validations and corrections, output the CORRECTED MCQ in EXACTLY this format:\nQuestion Type: MCQ\nDifficulty Level: Medium\nQuestion Text: [Corrected scenario-based question ending with ?]\nOption (A): [Corrected option]\nOption (B): [Corrected option]\nOption (C): [Corrected option]\nOption (D): [Corrected option]\nOption (E):\nCorrect Option (A/B/C/D): {{ $('Code11').first().json.correctPosition }}\nAnswer Explanation: [Corrected explanation with difficulty justification]\nScore: 1\nSub-Topics: {{ $('Code11').first().json.topic }}\nAuthor: Imocha\nTopic: {{ $('Webhook').first().json.body.skillName }}\n\n---\n\n# FINAL QUALITY GATE\n\nBefore outputting, confirm ALL of the following:\n\n1. [ ] Question does NOT start with prohibited words\n2. [ ] Question Text is concise (max 3-4 sentences) without role-play fluff\n3. [ ] Language is strictly US English with correct articles/punctuation\n4. [ ] Question tests APPLICATION and ANALYSIS (not just recall)\n5. [ ] All options are unique (no duplicates)\n6. [ ] All options are plausible and require analysis to evaluate\n7. [ ] All options are between 5-12 words\n8. [ ] Correct answer is at position {{ $('Code11').first().json.correctPosition }}\n9. [ ] No literal topic/subtopic in Question Text or Options\n10. [ ] No company or real famous person names\n11. [ ] No meta-hints or test-wise cues\n12. [ ] Explanation with difficulty justification present\n13. [ ] Option E is blank\n14. [ ] All format requirements met\n\n**OUTPUT ONLY THE CORRECTED MCQ - NO ADDITIONAL COMMENTARY OR VALIDATION NOTES**",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        944,
+        2560
+      ],
+      "id": "7ffbe431-5c54-49d7-94ae-091a5413b6a7",
+      "name": "AI Agent medium 3",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "===== ROLE & OBJECTIVE\nYou are an expert assessment designer specializing in creating high-quality, assessment-ready multiple-choice questions (MCQs).\n\nYour task is to generate ONE HARD difficulty, scenario-based MCQ strictly driven by the provided semantic angle parameters.\n\n---\n\n# LANGUAGE SETTING\nSTRICT US ENGLISH ONLY.\n\n---\n\n# DIFFICULTY DEFINITION: HARD\nAligned with Bloom’s Taxonomy: EVALUATE and CREATE.\n\nA HARD question:\n- Requires expert-level judgment\n- Requires synthesis of multiple concepts\n- Involves real trade-offs, constraints, and risks\n- Has no obvious correct answer without deep reasoning\n- All options must appear reasonable at first glance\n- Distinguishes experts from competent practitioners\n\n---\n\n# ANGLE PARAMETERS (AUTHORITATIVE INPUT)\n\nAngle Label:\n{{ $json.angle_label }}\n\nAngle Instruction:\n{{ $json.angle_instruction }}\n\nSemantic Focus:\n{{ $json.semantic_focus }}\n\nANGLE USAGE RULES (CRITICAL):\n1. The entire question MUST be derived ONLY from angle_instruction.\n2. semantic_focus defines the expert reasoning skill being tested.\n3. Do NOT simplify the complexity implied by the angle.\n4. Do NOT introduce additional angles, skills, or dimensions.\n5. Do NOT mention or expose angle_label, angle_instruction, or semantic_focus in the output text.\n6. Do NOT include examples, tools, or product names unless absolutely unavoidable for meaning.\n\n---\n\n# TOPIC & SUB-TOPIC BINDING (STRICT)\n\nTopic:\n{{ $('Webhook').first().json.body.skillName }}\n\nSub-Topic:\n{{ $json.topic }}\n\nCRITICAL RULES:\n- Topic and Sub-Topic values MUST appear ONLY in the output fields.\n- NEVER include them in Question Text, Options, or Explanation.\n- Concepts must be naturally rephrased.\n\n---\n\n# USER CONTEXT (OPTIONAL)\n{{ $json.context }}\n\nContext Processing Rules:\n1. If context exists and is non-empty, use it to tailor:\n   - Tone and writing style\n   - Target audience characteristics\n   - Scenario setting and industry context\n2. If context conflicts with any rule in this prompt, IGNORE the context.\n3. If context is empty or missing, use a neutral professional tone.\n\n---\n\n# QUESTION TEXT REQUIREMENTS\n\nStructural Rules:\n1. High-density, complex scenario\n2. Maximum 3–4 sentences total\n3. Start directly with the technical problem (no introductions)\n4. Require evaluation of competing approaches\n5. Include 3–5 complexity elements, such as:\n   - Trade-offs\n   - Constraints\n   - Risks\n   - Dependencies\n   - Edge cases\n   - Short-term vs long-term implications\n\nDynamic Ending Rules:\n- HOW → strategy, redesign, or mitigation approach\n- WHAT → consequence, risk, or inevitable outcome\n- WHICH → specific strategy, model, or approach (never generic)\n\nPROHIBITED as the first word:\nYou, Your, A, An, The, When, Where, Why, Who, Whom, Whose, While, If\n\n---\n\n# OPTIONS REQUIREMENTS\n\n- Exactly FOUR options: A, B, C, D\n- Each option: 5–15 words\n- Expert-level phrasing and precision\n- Parallel grammatical structure\n- Similar technical depth\n- ALL options must appear defensible initially\n\nCorrect answer MUST be placed at:\n{{ $json.correctPosition }}\n\nDistractor Types:\n- Valid under different constraints\n- Expert-level misconception\n- Correct strategy with flawed execution\n- Incorrect priority or trade-off selection\n\nNO options may:\n- Contain topic or sub-topic literals\n- Use absolutes (always, never, only)\n- Include giveaway or meta language\n\n---\n\n# EXPLANATION REQUIREMENTS\n\nExplanation MUST:\n- Explain WHY the correct option is optimal\n- Reference multiple scenario constraints and trade-offs\n- Demonstrate expert-level reasoning\n- Explain why a strong distractor is tempting but flawed\n- Explicitly justify HARD difficulty\n\nExplanation Structure:\n\"[Correct option] is optimal because [reasoning addressing multiple constraints]. This balances [trade-off A] with [trade-off B]. [Distractor] is tempting but incorrect because [subtle flaw]. This is a hard question as it requires expert evaluation of [multiple concepts].\"\n\n---\n\n# OUTPUT FORMAT (STRICT — NO DEVIATION)\n\nQuestion Type: MCQ\nDifficulty Level: Hard\nQuestion Text: [Complex scenario-based question ending with ?]\nOption (A): [5–15 words]\nOption (B): [5–15 words]\nOption (C): [5–15 words]\nOption (D): [5–15 words]\nOption (E):\nCorrect Option (A/B/C/D): {{ $json.correctPosition }}\nAnswer Explanation: [Expert-level explanation]\nScore: 1\nSub-Topics: {{ $json.topic }}\nAuthor: Imocha\nTopic: {{ $('Webhook').first().json.body.skillName }}\n\n---\n\n# FINAL INSTRUCTIONS\n- Generate ONE MCQ only\n- Follow angle_instruction EXACTLY\n- Use semantic_focus to guide depth and reasoning\n- Do NOT mention angles or internal logic\n- Output ONLY the formatted MCQ\n- Ensure the correct option at {{ $json.correctPosition }} requires expert judgment to identify\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        576,
+        3008
+      ],
+      "id": "036b5f1f-432f-4766-8496-bf2fdbc6c8af",
+      "name": "AI Agent hard ",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=====# ROLE & OBJECTIVE\nYou are an expert MCQ quality assurance specialist. Your task is to validate and correct a Hard-level MCQ question to ensure it meets all assessment standards, uses correct US English, and is ready for deployment at the expert level.\n\n---\n\n# INPUT FOR VALIDATION\nThe following is the raw MCQ output that requires validation and correction:\n\n{{ $json.output }}\n\n---\n\n# REFERENCE VALUES\n- **Topic:** {{ $('Webhook').first().json.body.skillName }}\n- **Subtopic:** {{ $('Code12').first().json.topic }}\n- **Required Correct Option Position:** {{ $('Code12').first().json.correctPosition }}\n\n---\n\n# VALIDATION FRAMEWORK\n\n## STEP 1: STRUCTURAL VALIDATION\n\nVerify each requirement and mark as PASS or FAIL:\n\n**1.1 Question Structure:**\n| Requirement | Check |\n|-------------|-------|\n| Is it an MCQ with exactly 4 options (A, B, C, D)? | [ ] |\n| Is the question scenario-based but concise (max 3-4 sentences)? | [ ] |\n| Does the question present competing priorities or trade-offs? | [ ] |\n| Does the question require integration of multiple concepts? | [ ] |\n| Does the question END with a question mark? | [ ] |\n| Is Option E left blank/empty? | [ ] |\n\n**1.2 Starting Word Validation:**\nThe **very first word** of the Question Text must NOT be any of these:\n- \"You\", \"Your\"\n- \"A\", \"An\", \"The\"\n- \"When\", \"Where\", \"Why\", \"Who\", \"Whom\", \"Whose\"\n- \"While\", \"If\"\n\n| Check | Status |\n|-------|--------|\n| First word of question is NOT a prohibited word | [ ] |\n\n**1.3 Topic/Subtopic Containment:**\n| Check | Status |\n|-------|--------|\n| Question Text does NOT contain literal topic value | [ ] |\n| Question Text does NOT contain literal subtopic value | [ ] |\n| Option A does NOT contain literal topic/subtopic | [ ] |\n| Option B does NOT contain literal topic/subtopic | [ ] |\n| Option C does NOT contain literal topic/subtopic | [ ] |\n| Option D does NOT contain literal topic/subtopic | [ ] |\n| Topic field contains correct value | [ ] |\n| Sub-Topics field contains correct value | [ ] |\n\n**1.4 Phrasing Variety Check:**\n| Check | Status |\n|-------|--------|\n| Question avoids generic \"Which of the following...\" or \"Which option...\"? | [ ] |\n| The question stem (\"What\"/\"How\"/\"Which\") matches the answer type? | [ ] |\n\n---\n\n## STEP 2: GRAMMAR, LANGUAGE, AND PUNCTUATION CHECK\n\n**2.1 US English Verification:**\n- Ensure all spelling follows US English conventions (e.g., \"judgment\" not \"judgement\", \"standardize\" not \"standardise\").\n- Ensure dates/units follow US formats if present.\n\n**2.2 Punctuation & Articles:**\n- **Articles (A/An/The):** Verify that all articles are used correctly. Fix missing or superfluous articles (e.g., \"implementation of strategy\" -> \"implementation of the strategy\").\n- **Punctuation:** Ensure the Question Text ends with a question mark \"?\". Ensure all options end with consistent punctuation.\n- **Run-on Sentences:** Fix any run-on sentences or comma splices.\n\n**2.3 Names Validation:**\n- Generic US names (e.g., John, Alice) are ALLOWED.\n- Real famous person names or celebrity names are PROHIBITED.\n\n---\n\n## STEP 3: COGNITIVE LEVEL VALIDATION\n\n**Hard Difficulty Criteria (Bloom's: Evaluate/Create):**\n| Requirement | Check |\n|-------------|-------|\n| Tests evaluation of complex situations | [ ] |\n| Requires synthesis of multiple concepts | [ ] |\n| Involves genuine trade-offs with competing priorities | [ ] |\n| Has no obviously correct answer without expert analysis | [ ] |\n| All options seem reasonable to competent practitioners | [ ] |\n| Only experts can reliably identify the best answer | [ ] |\n| Distinguishes experts from intermediate practitioners | [ ] |\n\n**If the question is NOT HARD ENOUGH:**\nSigns it's too easy:\n- One option is obviously better\n- Simple recall or single-concept application\n- Distractors are implausible to experienced practitioners\n\nFixes:\n- Add more complexity elements (constraints, trade-offs, dependencies)\n- Make all options more sophisticated\n- Require consideration of multiple factors for the best answer\n- Ensure distractors represent expert-level mistakes\n\n**If the question is TOO COMPLEX/UNFAIR:**\nSigns of problems:\n- No reasonably defensible correct answer\n- Requires knowledge beyond the topic scope\n- Trick question elements\n- Ambiguous to even experts\n\nFixes:\n- Clarify the scenario constraints\n- Ensure one answer is definitively best given all factors\n- Remove trick elements or excessive ambiguity\n\n---\n\n## STEP 4: OPTIONS QUALITY VALIDATION\n\n**4.1 Uniqueness Check:**\n| Comparison | Similar? | Action Needed |\n|------------|----------|---------------|\n| A vs B | [ ] | [ ] |\n| A vs C | [ ] | [ ] |\n| A vs D | [ ] | [ ] |\n| B vs C | [ ] | [ ] |\n| B vs D | [ ] | [ ] |\n| C vs D | [ ] | [ ] |\n\nIf any pair shares >30% words or similar approach -> REWRITE to make unique\n\n**4.2 Expert-Level Plausibility Check:**\n| Option | Plausible to Experts? | Tempting to Intermediate? |\n|--------|----------------------|---------------------------|\n| A | [ ] | [ ] |\n| B | [ ] | [ ] |\n| C | [ ] | [ ] |\n| D | [ ] | [ ] |\n\nFor hard difficulty:\n- ALL options must be plausible even to experts\n- At least 2-3 options must be tempting to intermediate practitioners\n- Only expert analysis reveals the best answer\n\n**4.3 Distractor Sophistication Check:**\nEach distractor should represent one of these sophisticated error types:\n\n| Option | Error Type | Status |\n|--------|-----------|--------|\n| [Distractor 1] | Valid in different context / Expert misconception / Wrong execution / Wrong priority | [ ] |\n| [Distractor 2] | Valid in different context / Expert misconception / Wrong execution / Wrong priority | [ ] |\n| [Distractor 3] | Valid in different context / Expert misconception / Wrong execution / Wrong priority | [ ] |\n\n**4.4 Disqualifying Keywords Check:**\nThe following should NOT appear in any option:\n- \"ignore\", \"neglect\", \"deny\", \"solely\", \"skip\", \"rely\"\n- \"always\", \"never\", \"only\", \"all\", \"none\" (absolutes)\n- \"obviously\", \"clearly\", \"the best\", \"correctly\", \"must choose\" (giveaways)\n- \"true statement\", \"correct approach\" (meta-hints)\n\n| Option | Contains Disqualifying Word? | Word Found |\n|--------|------------------------------|------------|\n| A | [ ] | |\n| B | [ ] | |\n| C | [ ] | |\n| D | [ ] | |\n\n**4.5 Parallel Structure & Length Check:**\n| Requirement | Status |\n|-------------|--------|\n| All options are between 5-15 words | [ ] |\n| All options have similar grammatical structure | [ ] |\n| All options have similar length | [ ] |\n| All options have similar level of specificity | [ ] |\n| All options have similar technical depth | [ ] |\n| All options address the question asked | [ ] |\n| No asymmetric phrasing revealing correctness | [ ] |\n| Tone is consistent across all options | [ ] |\n| No meta-hints or test-wise cues | [ ] |\n\n---\n\n## STEP 5: CORRECT ANSWER VALIDATION\n\n| Requirement | Status |\n|-------------|--------|\n| Correct answer is clearly identified | [ ] |\n| Correct answer is at position {{ $('Code12').first().json.correctPosition }} | [ ] |\n| Correct answer is BEST given ALL scenario constraints | [ ] |\n| Correct answer requires expert judgment to identify | [ ] |\n| Explanation references multiple scenario details | [ ] |\n| Explanation explains trade-off reasoning | [ ] |\n| Explanation addresses why a distractor is close but wrong | [ ] |\n| Explanation justifies Hard difficulty | [ ] |\n\n---\n\n## STEP 6: COMPLIANCE VALIDATION\n\n**EEOC Compliance:**\n| Requirement | Status |\n|-------------|--------|\n| No gender bias | [ ] |\n| No racial/ethnic references | [ ] |\n| No religious content | [ ] |\n| No age-related bias | [ ] |\n| No health-related topics | [ ] |\n\n**Content Safety:**\n| Requirement | Status |\n|-------------|--------|\n| No real company names | [ ] |\n| No real famous person names (Generic names are OK) | [ ] |\n| No controversial topics | [ ] |\n| No politically sensitive content | [ ] |\n\n---\n\n## STEP 7: FORMAT VALIDATION\n\n| Requirement | Status |\n|-------------|--------|\n| Question Type = \"MCQ\" | [ ] |\n| Difficulty Level = \"Hard\" | [ ] |\n| Score = \"1\" | [ ] |\n| Author = \"Imocha\" | [ ] |\n| Option E is blank/empty | [ ] |\n| All required columns present | [ ] |\n| Correct column order | [ ] |\n\n---\n\n# AUTO-CORRECTION PROTOCOL\n\nFor each FAILED validation check, apply the following corrections:\n\n**Starting Word Fix:**\nIf Question Text starts with prohibited word:\n1. Identify the current first word\n2. Restructure the sentence to start with an acceptable word\n3. Maintain the original meaning\n4. Use patterns like: \"During a critical...\", \"After identifying...\", \"Following an unexpected...\", \"In the final phase...\"\n\n**Generic Phrasing Fix:**\nIf the question uses generic phrasing like \"Which of the following is correct?\" or \"Which option should be used?\":\n1. Analyze the Correct Answer.\n   - If it describes an action -> Rewrite question to start with \"How...\" (e.g., \"How should the user...\")\n   - If it describes a result/object -> Rewrite question to start with \"What...\" (e.g., \"What is the result of...\")\n   - If it compares named items -> Ensure \"Which\" is followed by a noun (e.g., \"Which algorithm...\")\n\n**Scenario Length Fix:**\nIf Question Text is too long or fluffy:\n1. Remove any \"You are a...\" or role-play introductions.\n2. Condense the context to essential technical details and constraints.\n3. Ensure the entire question text is 3-4 sentences maximum.\n\n**Grammar & Language Fix:**\n1. Convert any British spelling to US English.\n2. Insert missing articles (a, an, the) where grammatically required.\n3. Fix punctuation errors (add missing periods/question marks).\n\n**Option Length Fix:**\nIf options exceed 15 words, rewrite to be more concise. Use imperative/direct phrasing. Ensure length is 5-15 words.\n\n**Cognitive Level Fix (Hard):**\nIf question is too easy (solvable by recall):\n1. Add a conflicting constraint or trade-off to the scenario.\n2. Make distractors represent \"correct in other contexts\" or \"expert misconception\" errors.\n3. Require synthesis of multiple factors.\n\nIf question is unfair/ambiguous:\n1. Clarify the specific constraints that make one answer definitively best.\n2. Remove trick elements.\n\n**Topic/Subtopic Containment Fix:**\nIf Question Text or Options contain literal topic/subtopic:\n1. Rephrase to describe the concept without using the exact term.\n2. Use synonyms or descriptive phrases.\n\n**Option Uniqueness Fix:**\nIf duplicate or near-duplicate options found:\n1. Keep the better-worded option.\n2. Rewrite the duplicate to represent a sophisticated error type (e.g., wrong priority, subtle edge case failure).\n\n**Correct Answer Position Fix:**\nIf correct answer is not at required position {{ $('Code12').first().json.correctPosition }}:\n1. Identify which option is currently correct.\n2. Swap content between current correct position and required position.\n3. Update the \"Correct Option\" field.\n\n**Meta-Hint and Bias Fix:**\nIf any option contains meta-hints, absolutes, or asymmetric phrasing:\n1. Rewrite to neutral, parallel form.\n2. Ensure tone is consistent across all options.\n\n---\n\n# OUTPUT REQUIREMENTS\n\nAfter completing ALL validations and corrections, output the CORRECTED MCQ in EXACTLY this format:\nQuestion Type: MCQ\nDifficulty Level: Hard\nQuestion Text: [Corrected scenario-based question ending with ?]\nOption (A): [Corrected option]\nOption (B): [Corrected option]\nOption (C): [Corrected option]\nOption (D): [Corrected option]\nOption (E):\nCorrect Option (A/B/C/D): {{ $('Code12').first().json.correctPosition }}\nAnswer Explanation: [Corrected explanation with difficulty justification]\nScore: 1\nSub-Topics: {{ $('Code12').first().json.topic }}\nAuthor: Imocha\nTopic: {{ $('Webhook').first().json.body.skillName }}\n\n---\n\n# FINAL QUALITY GATE\n\nBefore outputting, confirm ALL of the following:\n\n1. [ ] Question does NOT start with prohibited words\n2. [ ] Question Text is concise (max 3-4 sentences) without role-play fluff\n3. [ ] Language is strictly US English with correct articles/punctuation\n4. [ ] Question tests EVALUATION and SYNTHESIS (Expert level)\n5. [ ] All options are unique and plausible to experts\n6. [ ] All options are between 5-15 words\n7. [ ] Correct answer is at position {{ $('Code12').first().json.correctPosition }}\n8. [ ] No literal topic/subtopic in Question Text or Options\n9. [ ] No company or real famous person names\n10. [ ] No meta-hints or test-wise cues\n11. [ ] Explanation with difficulty justification present\n12. [ ] Option E is blank\n13. [ ] All format requirements met\n\n**OUTPUT ONLY THE CORRECTED MCQ - NO ADDITIONAL COMMENTARY OR VALIDATION NOTES**",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        960,
+        3008
+      ],
+      "id": "392ecd44-2e0c-4993-b0a9-86bcfebaa318",
+      "name": "AI Agent hard 3",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4.1-fast",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        896,
+        2352
+      ],
+      "id": "723c3d0d-d9eb-41ac-b464-740b30b3df9d",
+      "name": "OpenRouter Chat Model3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Q1YZrNTDtWRvd37F",
+          "name": "imocha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=====# ROLE & OBJECTIVE\nYou are an expert MCQ quality assurance specialist. Your task is to validate and correct an Easy-level MCQ question to ensure it meets all assessment standards, uses correct US English, and is ready for deployment.\n\n---\n\n# INPUT FOR VALIDATION\nThe following is the raw MCQ output that requires validation and correction:\n\n{{ $json.output }}\n\n---\n\n# REFERENCE VALUES\n- **Topic:** {{ $('Webhook').first().json.body.skillName }}\n- **Subtopic:** {{ $('Code10').first().json.topic }}\n- **Required Correct Option Position:** {{ $('Code10').first().json.correctPosition }}\n\n---\n\n# VALIDATION FRAMEWORK\n\n## STEP 1: STRUCTURAL VALIDATION\n\nVerify each requirement and mark as PASS or FAIL:\n\n**1.1 Question Structure:**\n| Requirement | Check |\n|-------------|-------|\n| Is it an MCQ with exactly 4 options (A, B, C, D)? | [ ] |\n| Is the question scenario-based with realistic context? | [ ] |\n| Does the question focus on a SINGLE concept/task? | [ ] |\n| Does the question END with a question mark? | [ ] |\n| Is Option E left blank/empty? | [ ] |\n\n**1.2 Starting Word Validation:**\nThe **very first word** of the Question Text must NOT be any of these:\n- \"You\", \"Your\"\n- \"A\", \"An\", \"The\" \n- \"When\", \"Where\", \"Why\", \"Who\", \"Whom\", \"Whose\"\n- \"While\", \"If\"\n\n| Check | Status |\n|-------|--------|\n| First word of question is NOT a prohibited word | [ ] |\n\n**1.3 Topic/Subtopic Containment:**\n| Check | Status |\n|-------|--------|\n| Question Text does NOT contain literal topic value | [ ] |\n| Question Text does NOT contain literal subtopic value | [ ] |\n| Option A does NOT contain literal topic/subtopic | [ ] |\n| Option B does NOT contain literal topic/subtopic | [ ] |\n| Option C does NOT contain literal topic/subtopic | [ ] |\n| Option D does NOT contain literal topic/subtopic | [ ] |\n| Topic field contains correct value | [ ] |\n| Sub-Topics field contains correct value | [ ] |\n\n**1.4 Phrasing Variety Check:**\n| Check | Status |\n|-------|--------|\n| Question avoids generic \"Which of the following...\" or \"Which option...\"? | [ ] |\n| The question stem (\"What\"/\"How\"/\"Which\") matches the answer type? | [ ] |\n\n---\n\n## STEP 2: GRAMMAR, LANGUAGE, AND PUNCTUATION CHECK\n\n**2.1 US English Verification:**\n- Ensure all spelling follows US English conventions (e.g., \"color\" not \"colour\", \"analyze\" not \"analyse\", \"program\" not \"programme\").\n- Ensure dates/units follow US formats if present.\n\n**2.2 Punctuation & Articles:**\n- **Articles (A/An/The):** Verify that all articles are used correctly. Fix missing or superfluous articles (e.g., change \"user selects option\" to \"the user selects an option\").\n- **Punctuation:** Ensure the Question Text ends with a question mark \"?\". Ensure all options end with consistent punctuation (either all periods or no periods).\n- **Run-on Sentences:** Fix any run-on sentences or comma splices.\n\n**2.3 Names Validation:**\n- Generic US names (e.g., John, Alice) are ALLOWED.\n- Real famous person names or celebrity names are PROHIBITED.\n\n---\n\n## STEP 3: COGNITIVE LEVEL VALIDATION\n\n**Easy Difficulty Criteria:**\n| Requirement | Check |\n|-------------|-------|\n| Tests Remember or Understand level (Bloom's) | [ ] |\n| Focuses on single concept or basic fact | [ ] |\n| Does not require complex analysis or synthesis | [ ] |\n| A candidate with basic training should answer correctly | [ ] |\n| No hidden complexities or edge cases | [ ] |\n\n**If the question is TOO HARD for Easy level:**\n- Simplify the scenario\n- Focus on one concept only\n- Make the correct answer more clearly connected to the scenario\n- Reduce the complexity of distractors\n\n**If the question is TOO EASY (trivially obvious):**\n- Make distractors more plausible\n- Add slight complexity to the scenario\n- Ensure all options require consideration\n\n---\n\n## STEP 4: OPTIONS QUALITY VALIDATION\n\n**4.1 Uniqueness Check:**\n| Comparison | Similar? | Action Needed |\n|------------|----------|---------------|\n| A vs B | [ ] | [ ] |\n| A vs C | [ ] | [ ] |\n| A vs D | [ ] | [ ] |\n| B vs C | [ ] | [ ] |\n| B vs D | [ ] | [ ] |\n| C vs D | [ ] | [ ] |\n\nIf any pair is similar in wording OR meaning -> REWRITE to make unique\n\n**4.2 Plausibility Check:**\n| Option | Plausible to Novice? | Status |\n|--------|---------------------|--------|\n| A | [ ] | |\n| B | [ ] | |\n| C | [ ] | |\n| D | [ ] | |\n\nAll options MUST be plausible. If any option is obviously wrong -> REWRITE\n\n**4.3 Disqualifying Keywords Check:**\nThe following words should NOT appear in any option:\n- \"ignore\", \"neglect\", \"deny\", \\\"solely\\\", \"skip\"\n- \"always\", \"never\", \"only\", \"all\", \"none\" (absolutes)\n- \"obviously\", \"clearly\", \"the best\", \"correctly\" (giveaways)\n\n| Option | Contains Disqualifying Word? | Word Found |\n|--------|------------------------------|------------|\n| A | [ ] | |\n| B | [ ] | |\n| C | [ ] | |\n| D | [ ] | |\n\n**4.4 Parallel Structure Check:**\n| Requirement | Status |\n|-------------|--------|\n| All options are between 5-10 words | [ ] |\n| All options have similar grammatical structure | [ ] |\n| All options have similar length | [ ] |\n| All options have similar level of specificity | [ ] |\n| All options have similar technical depth | [ ] |\n\n---\n\n## STEP 5: CORRECT ANSWER VALIDATION\n\n| Requirement | Status |\n|-------------|--------|\n| Correct answer is clearly identified | [ ] |\n| Correct answer is at position {{ $('Code10').first().json.correctPosition }} | [ ] |\n| Correct answer is genuinely the BEST answer | [ ] |\n| Correct answer is defensible with evidence | [ ] |\n| Explanation justifies why correct answer is right | [ ] |\n| Explanation mentions why a distractor is wrong | [ ] |\n| Explanation justifies Easy difficulty | [ ] |\n\n---\n\n## STEP 6: COMPLIANCE VALIDATION\n\n**EEOC Compliance:**\n| Requirement | Status |\n|-------------|--------|\n| No gender bias | [ ] |\n| No racial/ethnic references | [ ] |\n| No religious content | [ ] |\n| No age-related bias | [ ] |\n| No health-related topics | [ ] |\n\n**Content Safety:**\n| Requirement | Status |\n|-------------|--------|\n| No real company names | [ ] |\n| No real famous person names (Generic names are OK) | [ ] |\n| No controversial topics | [ ] |\n| No politically sensitive content | [ ] |\n\n---\n\n## STEP 7: FORMAT VALIDATION\n\n| Requirement | Status |\n|-------------|--------|\n| Question Type = \"MCQ\" | [ ] |\n| Difficulty Level = \"Easy\" | [ ] |\n| Score = \"1\" | [ ] |\n| Author = \"Imocha\" | [ ] |\n| Option E is blank/empty | [ ] |\n| All required columns present | [ ] |\n| Correct column order | [ ] |\n\n---\n\n# AUTO-CORRECTION PROTOCOL\n\nFor each FAILED validation check, apply the following corrections:\n\n**Starting Word Fix:**\nIf Question Text starts with prohibited word:\n1. Identify the current first word\n2. Restructure the sentence to start with an acceptable word\n3. Maintain the original meaning\n4. Use patterns like: \"During...\", \"After...\", \"Following...\", \"Upon...\", \"In preparing...\"\n\n**Generic Phrasing Fix:**\nIf the question uses generic phrasing like \"Which of the following is correct?\" or \"Which option should be used?\":\n1. Analyze the Correct Answer.\n   - If it describes an action -> Rewrite question to start with \"How...\" (e.g., \"How should the user...\")\n   - If it describes a result/object -> Rewrite question to start with \"What...\" (e.g., \"What is the result of...\")\n   - If it compares named items -> Ensure \"Which\" is followed by a noun (e.g., \"Which algorithm...\")\n\n**Grammar & Language Fix:**\n1. Convert any British spelling to US English (e.g., colour -> color).\n2. Insert missing articles (a, an, the) where grammatically required.\n3. Fix punctuation errors (add missing periods/question marks).\n\n**Option Length Fix:**\nIf options exceed 10 words, trim unnecessary adjectives while keeping the core meaning. Ensure length is 5-10 words.\n\n**Topic/Subtopic Containment Fix:**\nIf Question Text or Options contain literal topic/subtopic:\n1. Rephrase to describe the concept without using the exact term\n2. Use synonyms or descriptive phrases\n3. Ensure meaning is preserved\n\n**Option Uniqueness Fix:**\nIf duplicate or near-duplicate options found:\n1. Keep the better-worded option\n2. Rewrite the duplicate to represent a different type of error:\n   - Common misconception\n   - Partial understanding\n   - Adjacent concept\n3. Verify new option is plausible\n\n**Correct Answer Position Fix:**\nIf correct answer is not at required position {{ $('Code10').first().json.correctPosition }}:\n1. Identify which option is currently correct\n2. Swap content between current correct position and required position\n3. Update the \"Correct Option\" field\n4. Ensure swapped options still make sense in their new positions\n\n**Distractor Quality Fix:**\nIf any distractor is implausible or contains disqualifying words:\n1. Rewrite the distractor to be plausible but incorrect\n2. Remove or replace disqualifying words\n3. Ensure parallel structure with other options\n\n---\n\n# OUTPUT REQUIREMENTS\n\nAfter completing ALL validations and corrections, output the CORRECTED MCQ in EXACTLY this format:\nQuestion Type: MCQ\nDifficulty Level: Easy\nQuestion Text: [Corrected scenario-based question ending with ?]\nOption (A): [Corrected option]\nOption (B): [Corrected option]\nOption (C): [Corrected option]\nOption (D): [Corrected option]\nOption (E):\nCorrect Option (A/B/C/D): {{ $('Code10').first().json.correctPosition }}\nAnswer Explanation: [Corrected explanation]\nScore: 1\nSub-Topics: {{ $('Code10').first().json.topic }}\nAuthor: Imocha\nTopic: {{ $('Webhook').first().json.body.skillName }}\n\n---\n\n# FINAL QUALITY GATE\n\nBefore outputting, confirm ALL of the following:\n\n1. [ ] Question does NOT start with prohibited words\n2. [ ] Language is strictly US English with correct articles/punctuation\n3. [ ] All options are unique (no duplicates)\n4. [ ] All options are plausible\n5. [ ] All options are between 5-10 words\n6. [ ] Correct answer is at position {{ $('Code10').first().json.correctPosition }}\n7. [ ] No literal topic/subtopic in Question Text or Options\n8. [ ] No company or real famous person names\n9. [ ] Explanation with difficulty justification present\n10. [ ] Option E is blank\n11. [ ] All format requirements met\n\n**OUTPUT ONLY THE CORRECTED MCQ - NO ADDITIONAL COMMENTARY OR VALIDATION NOTES**",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        928,
+        2096
+      ],
+      "id": "40d23474-c9d4-4b45-a6c7-7ad3ba105e0f",
+      "name": "AI Agent ",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.1-pro-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        528,
+        2336
+      ],
+      "id": "34a432fc-ceac-47b2-b991-9c3eda986517",
+      "name": "OpenRouter Chat Model4",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Q1YZrNTDtWRvd37F",
+          "name": "imocha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.1-pro-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        576,
+        2784
+      ],
+      "id": "f9431b3b-255d-4d5c-a3f6-d62f376defcf",
+      "name": "OpenRouter Chat Model17",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Q1YZrNTDtWRvd37F",
+          "name": "imocha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4.1-fast",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        944,
+        3232
+      ],
+      "id": "b62434b1-a97f-4aee-88c8-2e7b3e124fcc",
+      "name": "OpenRouter Chat Model18",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Q1YZrNTDtWRvd37F",
+          "name": "imocha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.1-pro-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        608,
+        3248
+      ],
+      "id": "88d64168-c52f-438b-a462-df52eb1d728e",
+      "name": "OpenRouter Chat Model19",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Q1YZrNTDtWRvd37F",
+          "name": "imocha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2252c065-8e94-4bf3-9c28-d726bf5c5580",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1360,
+        2576
+      ],
+      "id": "04585ccd-d3d5-4e8d-9568-172b3347045f",
+      "name": "Webhook",
+      "webhookId": "2252c065-8e94-4bf3-9c28-d726bf5c5580"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combined Angle Expander + Aggregator\n// Input:\n//  - item.json.output (string OR object) from angle agent\n// Output:\n//  {\n//    easy:   [ {...}, {...} ],\n//    medium: [ {...} ],\n//    hard:   [ {...} ]\n//  }\n\nconst items = $input.all();\n\n/* --------------------------------------------------\n   Helpers\n-------------------------------------------------- */\nfunction stripMarkdown(text) {\n  if (typeof text !== 'string') return text;\n  return text\n    .replace(/```json\\s*/gi, '')\n    .replace(/```/g, '')\n    .trim();\n}\n\nfunction safeParse(input) {\n  if (!input) return null;\n  if (typeof input === 'object') return input;\n  try {\n    return JSON.parse(stripMarkdown(input));\n  } catch {\n    throw new Error('Angle Parser: Invalid JSON in agent output');\n  }\n}\n\n/* --------------------------------------------------\n   Aggregated result\n-------------------------------------------------- */\nconst result = {\n  easy: [],\n  medium: [],\n  hard: []\n};\n\n/* --------------------------------------------------\n   Main logic\n-------------------------------------------------- */\nfor (const item of items) {\n  const raw = item.json.output ?? item.json;\n  const parsed = safeParse(raw);\n\n  if (!parsed || typeof parsed !== 'object') {\n    throw new Error('Angle Parser: Parsed object invalid');\n  }\n\n  for (const diff of ['easy', 'medium', 'hard']) {\n    const arr = parsed[diff];\n\n    if (!Array.isArray(arr)) continue;\n\n    arr.forEach((angleObj, index) => {\n      result[diff].push({\n        topic: angleObj.topic || '',\n        context: angleObj.context || '',\n        angle_label: angleObj.angle_label || '',\n        angle_instruction: angleObj.angle_instruction || '',\n        semantic_focus: angleObj.semantic_focus || '',\n        question_index: index\n      });\n    });\n  }\n}\n\n/* --------------------------------------------------\n   Safety check\n-------------------------------------------------- */\nif (\n  result.easy.length === 0 &&\n  result.medium.length === 0 &&\n  result.hard.length === 0\n) {\n  throw new Error('Angle Aggregator: No angles produced — check agent output');\n}\n\nreturn [\n  {\n    json: result\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        2544
+      ],
+      "id": "1cba2b87-a877-445b-b527-8b0ea4e25962",
+      "name": "Code in JavaScript",
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "primary-production-1cd8.up.railway.app",
+            "user-agent": "node",
+            "content-length": "9466",
+            "accept": "*/*",
+            "accept-encoding": "br, gzip, deflate",
+            "accept-language": "*",
+            "content-type": "multipart/form-data; boundary=----formdata-undici-001315545092",
+            "sec-fetch-mode": "cors",
+            "x-forwarded-for": "208.77.244.166",
+            "x-forwarded-host": "primary-production-1cd8.up.railway.app",
+            "x-forwarded-proto": "https",
+            "x-railway-edge": "railway/europe-west4-drams3a",
+            "x-railway-request-id": "1jprtRwkSs2uoYPp0-QtfA",
+            "x-real-ip": "208.77.244.166",
+            "x-request-start": "1771226968535"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "skillName": "AI driven  Quality Engineering",
+            "questionType": "scenario-based",
+            "email": "harshmekal.ai@gmail.com",
+            "user_id": "34f82184-4fe3-4f27-85ae-5182a490017a",
+            "execution_id": "exec_1771226968189_eornybqd"
+          },
+          "webhookUrl": "https://primary-production-1cd8.up.railway.app/webhook/2252c065-8e94-4bf3-9c28-d726bf5c5580",
+          "executionMode": "production"
+        },
+        "binary": {
+          "topicsFile": {
+            "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "fileExtension": "xlsx",
+            "data": "database",
+            "fileName": "topicwise-question-template.xlsx",
+            "id": "database:8a412c3a-3e1d-42e7-a34a-85ad56a25796",
+            "fileSize": "8.63 kB",
+            "bytes": 8631
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "HTTP success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent easy ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent easy ": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent easy ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code10": {
+      "main": [
+        [
+          {
+            "node": "AI Agent easy 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code11": {
+      "main": [
+        [
+          {
+            "node": "AI Agent medium ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code12": {
+      "main": [
+        [
+          {
+            "node": "AI Agent hard ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Code11",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code12",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code10",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model16": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent medium 3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent easy 2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent medium ": {
+      "main": [
+        [
+          {
+            "node": "AI Agent medium 3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent medium 3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent hard ": {
+      "main": [
+        [
+          {
+            "node": "AI Agent hard 3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent hard 3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent ": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent easy 2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model17": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent medium ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model18": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent hard 3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model19": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent hard ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ed1b7050-0551-457b-a130-5ca4c9b99515",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8084017c027b0f6e084f0d160c1b5ae63ce4288ee036b2cc3fba316705f6ccca"
+  },
+  "id": "GKynHhYFaapGbZv2",
+  "tags": []
+}
